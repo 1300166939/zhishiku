@@ -7,14 +7,14 @@ from gateway import handler
 from access import search_response
 from test_rerank import client
 
-def item(i='one',**metadata):return {'id':i,'text':'接口 /search 成功样本 '+i,'metadata':{'kb_domain':'test_api','doc_type':'testcase_chunk','source_table':'testcase','source_id':i,'source_hash':'old-source-'+i,'verified':True,'confidence':.9,'project':'学习工具','module':'拍题','env':'test','api_path':'/search','ordered_steps':[{'method':'POST','api_path':'/search'}],'evidence_refs':['source-run-'+i],**metadata}}
+def item(i='one',**metadata):return {'id':i,'text':'接口 /search 成功样本 '+i,'metadata':{'kb_domain':'test_api','doc_type':'testcase_chunk','source_table':'testcase','source_id':i,'source_hash':'old-source-'+i,'verified':True,'confidence':.9,'project':'示例项目','module':'拍题','env':'test','api_path':'/search','ordered_steps':[{'method':'POST','api_path':'/search'}],'evidence_refs':['source-run-'+i],**metadata}}
 
 class Tests(unittest.TestCase):
  def setUp(self):self.tmp=tempfile.TemporaryDirectory();self.kb=ApiKnowledge(self.tmp.name,Embed(),Vectors(),'trusted')
  def tearDown(self):self.tmp.cleanup()
  def test_exact_metadata_original_id_typed_filter_and_idempotency(self):
   a=item(error_keywords=['timeout','断言失败'],param_name='token');result=self.kb.upsert([a]);self.assertEqual(result['count'],1);self.assertEqual(self.kb.item('one'),a)
-  self.kb.filters=validate_filters({'project':'学习工具','verified':True,'env':'test'})
+  self.kb.filters=validate_filters({'project':'示例项目','verified':True,'env':'test'})
   r=search_response(self.kb.query('/search','trusted'),'test_api');self.assertEqual(r['results'][0]['id'],'one')
   self.assertEqual(r['results'][0]['metadata']['source_id'],'one');self.assertEqual(r['results'][0]['metadata']['ordered_steps'],a['metadata']['ordered_steps'])
   self.kb.embedding.fail=True;self.assertEqual(self.kb.upsert([a])['unchanged'],1)

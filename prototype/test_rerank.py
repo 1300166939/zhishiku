@@ -129,18 +129,18 @@ class QueryTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.kb = AppKnowledge(self.tmp.name, MapEmbed(), Vectors(), 'trusted')
-        values, _ = validate({'items': [item(str(i), text='拍题精学历史入口选项 ' + str(i),
+        values, _ = validate({'items': [item(str(i), text='示例功能历史入口选项 ' + str(i),
                                   image_urls=['https://example.test/%s.png' % i]) for i in range(8)]})
         import_items(self.kb, values, 'test')
 
     def tearDown(self): self.tmp.cleanup()
 
     def test_pool_beyond_old_topk_mapping_and_no_embedding_reimport(self):
-        baseline = self.kb.query('拍题精学', 'trusted', 5)
+        baseline = self.kb.query('示例功能', 'trusted', 5)
         seen = []
         def transport(p): seen.append(p); return reverse(p)
         self.kb.reranker = client(transport)
-        result = self.kb.query('拍题精学', 'trusted', 5)
+        result = self.kb.query('示例功能', 'trusted', 5)
         self.assertEqual(len(seen[0]['documents']), 8)
         self.assertNotIn(result['evidence'][0]['evidence_id'], [e['evidence_id'] for e in baseline['evidence']])
         self.assertEqual(result['ranking']['status'], 'applied')
@@ -153,31 +153,31 @@ class QueryTests(unittest.TestCase):
         self.assertEqual(adapted['results'][0]['screenshots'], result['evidence'][0]['screenshots'])
 
     def test_fallback_identical_baseline_ids_scores_and_disabled(self):
-        baseline = self.kb.query('拍题精学', 'trusted')
+        baseline = self.kb.query('示例功能', 'trusted')
         self.kb.reranker = client(lambda p: {})
-        fallback = self.kb.query('拍题精学', 'trusted')
+        fallback = self.kb.query('示例功能', 'trusted')
         self.assertEqual(fallback['evidence'], baseline['evidence'])
         self.kb.reranker.enabled = False
-        self.assertEqual(self.kb.query('拍题精学', 'trusted')['evidence'], baseline['evidence'])
+        self.assertEqual(self.kb.query('示例功能', 'trusted')['evidence'], baseline['evidence'])
 
     def test_new_library_skips_provider_and_retains_rrf(self):
-        baseline=self.kb.query('拍题精学','trusted',5)
+        baseline=self.kb.query('示例功能','trusted',5)
         def fail(p):raise AssertionError('Disabled project reached provider')
         self.kb.reranker=client(fail);self.kb.rerank_project_gate=lambda p:False
-        result=self.kb.query('拍题精学','trusted',5)
+        result=self.kb.query('示例功能','trusted',5)
         self.assertEqual(result['evidence'],baseline['evidence'])
         self.assertEqual(result['ranking']['status'],'disabled')
         self.assertEqual(result['ranking']['library_disabled_count'],8)
 
     def test_mixed_libraries_only_enabled_texts_reorder_in_their_slots(self):
-        values,_=validate({'items':[item('foreign',project='new_app',text='NEW_PROJECT_SENTINEL 拍题精学')]})
+        values,_=validate({'items':[item('foreign',project='new_app',text='NEW_PROJECT_SENTINEL 示例功能')]})
         import_items(self.kb,values,'new')
         self.kb.max_top_k=9  # Inspect all fixture slots without altering the HTTP limit.
-        baseline=self.kb.query('拍题精学','trusted',9)
+        baseline=self.kb.query('示例功能','trusted',9)
         seen=[]
         def inspect(p):seen.extend(p['documents']);return reverse(p)
         self.kb.reranker=client(inspect);self.kb.rerank_project_gate=lambda p:p=='test_map'
-        result=self.kb.query('拍题精学','trusted',9)
+        result=self.kb.query('示例功能','trusted',9)
         self.assertEqual(len(seen),8);self.assertNotIn('NEW_PROJECT_SENTINEL',' '.join(seen))
         old_slot=next(i for i,e in enumerate(baseline['evidence']) if e['metadata']['project']=='new_app')
         self.assertEqual(result['evidence'][old_slot]['evidence_id'],baseline['evidence'][old_slot]['evidence_id'])
@@ -189,8 +189,8 @@ class QueryTests(unittest.TestCase):
             with self.kb.db() as c: c.execute("UPDATE publications SET state='withdrawn'")
             return reverse(p)
         self.kb.reranker = client(withdraw)
-        self.assertEqual(self.kb.query('拍题精学', 'other')['evidence'], [])
-        result = self.kb.query('拍题精学', 'trusted')
+        self.assertEqual(self.kb.query('示例功能', 'other')['evidence'], [])
+        result = self.kb.query('示例功能', 'trusted')
         self.assertEqual(result['evidence'], [])
         self.assertEqual(result['abstain_reason'], 'no_authorized_evidence')
 
@@ -213,15 +213,15 @@ class QueryTests(unittest.TestCase):
             self.assertEqual(kb.query('导航', 'trusted')['evidence'], [])
 
     def test_scoped_candidates_exclude_other_project_and_old_version_before_send(self):
-        values,_=validate({'items':[item('foreign',project='other',text='FOREIGN_SENTINEL 拍题精学'),
-                                   item('0',text='OLD_SENTINEL 拍题精学')]})
+        values,_=validate({'items':[item('foreign',project='other',text='FOREIGN_SENTINEL 示例功能'),
+                                   item('0',text='OLD_SENTINEL 示例功能')]})
         import_items(self.kb,values,'old')
-        values,_=validate({'items':[item('0',text='CURRENT_SENTINEL 拍题精学')]})
+        values,_=validate({'items':[item('0',text='CURRENT_SENTINEL 示例功能')]})
         import_items(self.kb,values,'new')
         seen=[]
         def inspect(p):seen.extend(p['documents']);return reverse(p)
         self.kb.filters={'project':'test_map'};self.kb.reranker=client(inspect)
-        self.kb.query('拍题精学','trusted')
+        self.kb.query('示例功能','trusted')
         self.assertTrue(seen)
         self.assertNotIn('FOREIGN_SENTINEL',' '.join(seen))
         self.assertNotIn('OLD_SENTINEL',' '.join(seen))
@@ -254,7 +254,7 @@ class QueryTests(unittest.TestCase):
             with self.kb.db() as c:c.execute("UPDATE sources SET active_version='future-version'")
             return reverse(p)
         self.kb.reranker=client(switch)
-        self.assertEqual(self.kb.query('拍题精学','trusted')['evidence'],[])
+        self.assertEqual(self.kb.query('示例功能','trusted')['evidence'],[])
 
     def test_report_screenshot_run_step_identity_after_rank(self):
         from test_app_links import LinksTests, TextEmbed

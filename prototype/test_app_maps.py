@@ -19,7 +19,7 @@ class MapEmbed(Embed):
     model='doubao-embedding-vision-251215';dimensions=2048
     def embed_image(self,*a,**kw):raise AssertionError('No image model allowed')
 
-def item(iid='entry',project='test_map',text='首页\n→ 拍题精学\n→ 拍题记录',**meta):
+def item(iid='entry',project='test_map',text='首页\n→ 示例功能\n→ 拍题记录',**meta):
     return {'id':iid,'text':text,'metadata':{'project':project,'title':'拍题历史入口',**meta}}
 
 class MapTests(unittest.TestCase):
@@ -34,7 +34,7 @@ class MapTests(unittest.TestCase):
     def test_import_query_and_links_no_image_data(self):
         result=self.load([item(image_urls=['https://example.test/entry.png'],source_url='https://example.test/map')])
         self.assertEqual(result['model_calls'],1)
-        found=self.kb.query('拍题精学','trusted')['evidence'][0]
+        found=self.kb.query('示例功能','trusted')['evidence'][0]
         self.assertEqual(found['metadata']['doc_type'],MAP_TYPE)
         self.assertEqual(found['trust_status'],'author_provided_map')
         self.assertEqual(found['screenshots'][0]['asset_url'],'https://example.test/entry.png')
@@ -45,7 +45,7 @@ class MapTests(unittest.TestCase):
         self.assertEqual(again['model_calls'],0);self.assertEqual(again['unchanged'],1)
         self.assertEqual(first['sources'][0]['version'],again['sources'][0]['version'])
     def test_update_if_match_and_old_version_excluded(self):
-        first=self.load([item()]);updated=item(text='我的书房 → 拍题精学 → 历史记录')
+        first=self.load([item()]);updated=item(text='我的书房 → 示例功能 → 历史记录')
         updated['if_match']=first['sources'][0]['version']
         result=self.load([updated]);self.assertNotEqual(result['sources'][0]['version'],updated['if_match'])
         with self.assertRaises(MapConflict):self.load([updated],jid='new-stale-request')
@@ -66,7 +66,7 @@ class MapTests(unittest.TestCase):
     def test_project_type_scalar_list_and_listing(self):
         self.load([item(project='one'),item(project='two')])
         self.kb.filters={'project':'one','doc_type':[MAP_TYPE]}
-        found=self.kb.query('拍题精学','trusted')['evidence']
+        found=self.kb.query('示例功能','trusted')['evidence']
         self.assertEqual(len(found),1);self.assertEqual(found[0]['metadata']['project'],'one')
         self.kb.filters={'doc_type':REPORT_TYPE};self.assertEqual(self.kb.authorized('trusted'),[])
         self.kb.filters={};result=listing(self.kb,{'filters':{'project':['one','two']},'limit':1})
@@ -79,8 +79,8 @@ class MapTests(unittest.TestCase):
         result=self.load([item('b:c',project='a'),item('c',project='a:b')])
         self.assertEqual(len(set(s['source_id'] for s in result['sources'])),2)
     def test_navigation_chain_and_headings_retained(self):
-        chunks=parts(item(text='# 进入页面\n首页\n→ 拍题精学\n→ 历史记录\n\n# 返回\n点击返回'))
-        self.assertEqual(len(chunks),2);self.assertIn('首页\n→ 拍题精学\n→ 历史记录',chunks[0]['text'])
+        chunks=parts(item(text='# 进入页面\n首页\n→ 示例功能\n→ 历史记录\n\n# 返回\n点击返回'))
+        self.assertEqual(len(chunks),2);self.assertIn('首页\n→ 示例功能\n→ 历史记录',chunks[0]['text'])
         self.assertEqual(chunks[1]['heading_path'],'返回')
     def test_request_id_persisted_content_conflict(self):
         cfg={'KB_APP_DATA_ROOT':self.tmp.name}
@@ -106,7 +106,7 @@ class MapTests(unittest.TestCase):
                 self.assertEqual(request('/upsert',{'items':[item()]})[0],403)
                 code,job=request('/upsert',{'items':[item()]},'write');self.assertEqual(code,202)
                 self.assertEqual(request(job['status_url'])[1]['kind'],'app_map')
-                code,body=request('/search',{'query':'拍题精学','top_k':5,'filters':{'kb_domain':'app','project':'test_map','doc_type':MAP_TYPE}})
+                code,body=request('/search',{'query':'示例功能','top_k':5,'filters':{'kb_domain':'app','project':'test_map','doc_type':MAP_TYPE}})
                 self.assertEqual(code,200);self.assertEqual(body['results'][0]['metadata']['doc_type'],MAP_TYPE)
                 self.assertEqual(request('/maps/app',{'filters':{}})[1]['total'],1)
         finally:server.shutdown();server.server_close();thread.join()

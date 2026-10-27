@@ -21,8 +21,8 @@ class OptimizedTests(unittest.TestCase):
     def lexical(self,q):
         with patch.object(self.embed,'embed_text',side_effect=RuntimeError('offline')):return self.kb.query(q,'trusted')
     def test_lexical_short_long_identifiers_and_punctuation(self):
-        self.load([item(text='退出 AI 定制班：点击“完成”！ QCF-9789__ios')])
-        for query in ['退出','AI 定制班','QCF-9789','点击“完成”！']:
+        self.load([item(text='退出 示例课程：点击“完成”！ SYNTH-001__ios')])
+        for query in ['退出','示例课程','SYNTH-001','点击“完成”！']:
             with self.subTest(query=query):
                 ev=self.lexical(query)['evidence'];self.assertTrue(ev);self.assertIn('exact',ev[0]['channels'])
     def test_backfill_repairs_either_index_and_triggers_update_delete(self):
@@ -41,17 +41,17 @@ class OptimizedTests(unittest.TestCase):
     def test_other_projects_cannot_crowd_candidates(self):
         self.load([item('target',project='one')]+[item(str(i),project='two') for i in range(40)])
         self.kb.filters={'project':'one','doc_type':[MAP_TYPE]}
-        ev=self.lexical('拍题精学')['evidence'];self.assertEqual(len(ev),1);self.assertEqual(ev[0]['metadata']['project'],'one')
+        ev=self.lexical('示例功能')['evidence'];self.assertEqual(len(ev),1);self.assertEqual(ev[0]['metadata']['project'],'one')
         self.assertEqual(listing(self.kb,{'filters':{'doc_type':REPORT_TYPE}})['total'],0)
     def test_large_scope_uses_persistent_fts_and_keeps_exact(self):
         import uuid
-        self.load([item(text='退出 AI 定制班：点击“完成”！ QCF-9789__ios')])
+        self.load([item(text='退出 示例课程：点击“完成”！ SYNTH-001__ios')])
         with self.kb.db() as c:
             row=c.execute('SELECT * FROM chunks LIMIT 1').fetchone()
             for i in range(501):
                 c.execute('INSERT INTO chunks VALUES(?,?,?,?,?,?)',(str(uuid.uuid4()),row['source_id'],row['version'],'普通内容 '+str(i),'part',''))
         self.kb.filters={'project':'test_map'}
-        for query in ['退出','AI 定制班','QCF-9789','点击“完成”！']:
+        for query in ['退出','示例课程','SYNTH-001','点击“完成”！']:
             ev=self.lexical(query)['evidence'];self.assertTrue(ev);self.assertIn('exact',ev[0]['channels'])
     def test_withdrawal_during_enrichment_removes_hit(self):
         self.load([item()]);original=self.kb.objects.get
@@ -59,7 +59,7 @@ class OptimizedTests(unittest.TestCase):
             value=original(ref)
             with self.kb.db() as c:c.execute("UPDATE publications SET state='withdrawn'")
             return value
-        with patch.object(self.kb.objects,'get',side_effect=withdraw):self.assertEqual(self.lexical('拍题精学')['evidence'],[])
+        with patch.object(self.kb.objects,'get',side_effect=withdraw):self.assertEqual(self.lexical('示例功能')['evidence'],[])
     def test_busy_http_response_and_no_sensitive_log_message(self):
         from diagnostics import failure
         with patch('diagnostics.event'):
