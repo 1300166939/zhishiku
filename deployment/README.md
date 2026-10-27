@@ -1,13 +1,42 @@
-# Deployment configuration
+# 部署与配置说明
 
-Place code in `/opt/ai-knowledge-base` and private configuration in `/etc/ai-knowledge-base`. These paths are generic installation conventions, not production host identities.
+代码可放置在 `/opt/ai-knowledge-base`，私密配置放置在 `/etc/ai-knowledge-base`。这些是通用安装路径，不包含原生产机器的标识。
 
-Provide three data roots, a trusted collector principal and a validated credential policy. Bearer tokens are generated privately through the management tools; no token values belong in source control. Do not initialize the gateway with legacy all-domain credentials by accident. An empty policy denies all requests until credentials are enrolled by the administrator.
+## 配置文件
 
-`gateway.env.example`, `model.env.example` and `qdrant.env.example` contain configuration names only. Do not start a real service with blank credential values. Serve Qdrant on loopback with an API key and provision the collections through the core adapter. Use your own TLS certificate and reverse proxy to port 8088.
+| 示例文件 | 用途 |
+|---|---|
+| `gateway.env.example` | 三类数据根目录、可信采集主体、授权策略及库目录位置 |
+| `model.env.example` | 方舟 API Key、Embedding 模型名称和维度 |
+| `qdrant.env.example` | Qdrant API Key |
+| `policy.example.json` | 空授权策略；未登记凭证前拒绝全部访问 |
+| `library-routes.example.json` | 空库目录，供管理员登记公共与专属入口 |
 
-`ai-kb-connector-worker.service` is an optional manual Linux oneshot unit (CPU 50%, memory 1 GiB, tasks 32). It runs one queued item; it installs no timer and provides no recurring collection. Provision the `aikb` service account, directory permissions and gateway/operator services separately.
+配置示例中的凭证值均为空，不能直接用于真实部署。管理员需要在私密目录中生成凭证，并通过管理工具配置库、项目和读写权限。不要意外启用旧式全域共享凭证。
 
-Model calls use the official Ark API; rerank remains optional. The privileged Unix-socket operator must not be exposed directly to the Internet. Agent, owner and source authorization still require administrator-managed policy.
+## 服务准备
 
-Run the offline tests before deployment. Full/offsite backups, valid business versions, independent evaluation and continuous-load sizing require deployment-specific acceptance.
+1. 准备公共、API 与 App 数据目录，设置服务账号及私密目录权限。
+2. 配置网关、模型和 Qdrant 的实际配置文件，核验字段与适配器一致。
+3. 将 Qdrant 部署在回环地址并设置 API Key，通过核心适配器准备集合。
+4. 部署网关和受控 Unix socket 开库服务；特权开库服务不得直接暴露到公网。
+5. 使用自己的 TLS 证书和 HTTPS 反向代理，将请求转发到网关端口 8088。
+6. 按管理员维护的策略登记凭证、库与项目范围，分别验证读写权限和越权拒绝。
+
+当前授权边界为可信 Bearer policy 的域、项目与操作范围；负责人描述字段不能证明自然人独占。Agent 权限和来源授权仍需管理员配置。
+
+## 手动连接器 Worker
+
+`ai-kb-connector-worker.service` 是可选的 Linux oneshot 配置，每次处理一个排队任务：CPU 配额 50%，内存上限 1 GiB，任务数上限 32。
+
+使用前需要准备 `aikb` 服务账号、代码路径及目录权限。该配置不安装 timer，不创建周期采集。网关及开库服务需要另行部署。
+
+## 模型与报告入口
+
+模型通过官方火山方舟 API 调用，重排按配置启用。App 报告来源默认是保留的示例域名；替换时应保持服务端和客户端的精确来源白名单一致，不能开放任意来源。
+
+## 验证与运维
+
+部署前先运行根目录 README 中的离线测试和公开文件扫描。上线前还需验证实际 HTTPS 调用、权限、版本与发布行为。
+
+全量/离站备份恢复、有效业务版本、独立评测与持续负载容量需要部署方专项验收。GC 默认只生成只读计划，不自动删除历史对象。
