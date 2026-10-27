@@ -1,0 +1,20 @@
+[Unit]
+Description=AI knowledge manual connector worker (no timer)
+After=network.target
+
+[Service]
+Type=oneshot
+User=aikb
+Group=aikb
+WorkingDirectory=/opt/ai-knowledge-base/prototype
+ExecStart=/usr/bin/python3 /opt/ai-knowledge-base/prototype/connector_queue.py /var/lib/ai-knowledge-base/connector-queue --run-one
+CPUQuota=50%
+MemoryMax=1073741824
+TasksMax=32
+TimeoutStartSec=600
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/ai-knowledge-base
+UMask=0077
